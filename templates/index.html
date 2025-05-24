@@ -1,0 +1,893 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit.ai | Auditor Inteligente</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%); /* Fundo mais claro e neutro */
+            min-height: 100vh;
+            color: #495057; /* Cor de texto principal mais suave */
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .main-container {
+            padding: 20px;
+            max-width: 1700px; 
+            margin: 20px auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #343a40; /* Cor do header mais escura para contraste */
+        }
+
+        .header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5em; /* Ligeiramente menor */
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 1.1em; /* Ligeiramente menor */
+            color: #6c757d; /* Cor do subtítulo */
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px; 
+            justify-content: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            padding: 12px; /* Padding menor */
+            background-color: #ffffff;
+            border-radius: 8px; /* Bordas mais suaves */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .btn {
+            padding: 8px 16px; /* Padding menor para botões */
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500; 
+            font-size: 0.875em; /* Fonte menor */
+            display: inline-flex;
+            align-items: center;
+            gap: 6px; /* Gap menor */
+            transition: all 0.2s ease-in-out;
+            text-decoration: none;
+            color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .btn i {
+            margin-right: 4px; /* Espaço menor para ícone */
+        }
+
+        .btn-success { background-color: #28a745; }
+        .btn-success:hover { background-color: #218838; box-shadow: 0 2px 6px rgba(40,167,69,0.15); }
+        .btn-danger { background-color: #dc3545; }
+        .btn-danger:hover { background-color: #c82333; box-shadow: 0 2px 6px rgba(220,53,69,0.15); }
+        .btn-primary { background-color: #007bff; }
+        .btn-primary:hover { background-color: #0056b3; box-shadow: 0 2px 6px rgba(0,123,255,0.15); }
+        .btn-secondary { background-color: #6c757d; }
+        .btn-secondary:hover { background-color: #545b62; box-shadow: 0 2px 6px rgba(108,117,125,0.15); }
+        .btn:active { transform: translateY(1px); }
+
+
+        .audit-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 2.5fr) minmax(0, 1.5fr); /* Ajuste de proporção, mais espaço para inputs */
+            gap: 20px; 
+        }
+
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; 
+        }
+        
+        .card-shared {
+            background: #ffffff;
+            border-radius: 8px; /* Bordas mais suaves */
+            padding: 20px; /* Padding interno */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        .transcription-section { 
+            flex-grow: 1; /* Ocupa espaço vertical disponível */
+            min-height: 350px; /* Altura mínima garantida */
+        }
+        .comment-section {
+             /* Altura determinada pelo conteúdo */
+        }
+
+        .card-title-shared {
+            color: #343a40;
+            margin-bottom: 15px; 
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Gap menor */
+            font-size: 1.1em; /* Fonte menor para títulos de card */
+            font-weight: 600;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e9ecef; 
+        }
+        .card-title-shared i {
+            color: #007bff; 
+        }
+
+        .form-control { 
+            border: 1px solid #ced4da; 
+            border-radius: 5px; /* Borda mais suave */
+            padding: 8px 10px; /* Padding menor */
+            font-size: 0.9em; /* Fonte menor */
+            font-family: inherit;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.15rem rgba(0,123,255,.2); /* Sombra de foco menor */
+        }
+        textarea.form-control {
+            resize: vertical;
+        }
+        #transcricao {
+            min-height: 280px; /* Altura mínima ajustada */
+            flex-grow: 1; 
+        }
+        #reclamacao {
+            min-height: 70px; 
+        }
+
+        .summary-card {
+            /* O right-panel agora controla a rolagem se necessário */
+        }
+        #resumo-dinamico .summary-content {
+            /* Não precisa de max-height aqui, o card pai (.right-panel) pode ter se necessário */
+        }
+
+        .summary-item {
+            display: grid;
+            grid-template-columns: auto 1fr; 
+            gap: 6px; 
+            margin-bottom: 6px; /* Espaçamento menor */
+            padding: 4px 0; 
+            font-size: 0.85em; /* Fonte bem menor para itens do resumo */
+        }
+        .summary-item:not(:last-child) {
+             border-bottom: 1px dotted #f0f0f0; /* Separador mais leve */
+        }
+
+        .summary-label {
+            font-weight: 500; 
+            color: #495057; 
+        }
+        .summary-value {
+            color: #212529; 
+            word-break: break-word;
+        }
+        .summary-value input[type="text"].form-control-sm {
+            font-size: 0.8em;
+            padding: 0.2rem 0.4rem;
+        }
+        #campo-participantes ul {
+            margin: 0; padding-left: 0; list-style-type: none; text-align: left;
+            font-size: 0.95em; /* Tamanho da fonte da lista de participantes */
+        }
+        #campo-participantes li {
+            margin-bottom: 3px; padding: 2px 0;
+        }
+
+        .agent-selection-card { 
+            /* Herda .card-shared */
+        }
+        .agent-selection-container {
+            margin-bottom: 6px;
+        }
+        .radio-option-agent {
+            margin-bottom: 5px; display: flex; align-items: center; gap: 5px;
+            padding: 5px; border-radius: 4px; transition: background-color 0.15s ease;
+        }
+        .radio-option-agent:hover { background-color: #f8f9fa; }
+        .radio-option-agent input[type="radio"] { margin-right: 3px; transform: scale(0.85); }
+        .radio-option-agent label { cursor: pointer; font-size: 0.85em; color: #343a40; }
+
+        .star-rating-container { display: flex; gap: 2px; margin: 6px 0; }
+        .star-rating-container .star {
+            font-size: 1.4em; /* Estrelas menores */
+            color: #ced4da; cursor: pointer; transition: color 0.1s ease;
+        }
+        .star-rating-container .star:hover,
+        .star-rating-container .star.hovered { color: #ffc107; }
+        .star-rating-container .star.selected { color: #ffc107; }
+
+        .placeholder-empty {
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            color: #6c757d; background: #f8f9fa; border: 1px dashed #dee2e6; 
+            border-radius: 8px; padding: 15px; min-height: 100px; 
+            font-size: 0.9em;
+        }
+        .placeholder-content { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .placeholder-icon { font-size: 1.6em; color: #adb5bd; }
+
+        .form-text { font-size: 0.75em; color: #6c757d; margin-top: 3px; }
+        .form-label { font-weight: 500; margin-bottom: 4px; font-size: 0.9em; }
+        .form-group { margin-bottom: 0.8rem; } 
+
+        /* Modal Styles (mantidos, com pequenos ajustes de padding/fonte) */
+        .modal {
+            display: none; position: fixed; z-index: 1050; 
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(33, 37, 41, 0.7); 
+            backdrop-filter: blur(3px);
+            align-items: center; justify-content: center;
+            padding: 15px;
+        }
+        .modal-content {
+            background: white; border-radius: 10px;
+            max-width: 95vw; width: 100%; 
+            /* max-height: 85vh; */ /* Removido para evitar scrollbar */
+            display: flex; flex-direction: column;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+            animation: fadeInModal 0.25s ease-out;
+        }
+        @keyframes fadeInModal {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-header {
+            padding: 0.9rem 1.1rem; /* Padding menor */
+            border-bottom: 1px solid #dee2e6;
+            display: flex; justify-content: space-between; align-items: center;
+            border-radius: 10px 10px 0 0; 
+        }
+         .modal-header h2 { font-size: 1.3em; font-weight: 600; color: #343a40; margin:0; } /* Ajustado o tamanho da fonte */
+        .modal-body {
+            padding: 1.1rem;
+            /* overflow-y: auto; */ /* Removido para evitar scrollbar */
+            flex-grow: 1;
+            font-size: 1em; /* Aumentado o tamanho da fonte */
+            line-height: 1.5; /* Melhorada a altura da linha para legibilidade */
+        }
+        .modal-footer {
+            padding: 0.9rem 1.1rem;
+            border-top: 1px solid #dee2e6;
+            display: flex; gap: 8px; align-items: center; justify-content: flex-end;
+            background-color: #f8f9fa; 
+            border-radius: 0 0 10px 10px; 
+        }
+         .modal-footer span { margin-right: auto; font-size: 0.85em; color: #495057; }
+        .close-button {
+            font-size: 1.4rem; cursor: pointer; color: #6c757d;
+            background: none; border: none; padding: 0.4rem; line-height: 1;
+        }
+        .close-button:hover { color: #343a40; }
+
+        /* Splash Screen (mantidos, com pequenos ajustes) */
+        #splash {
+            display: none; position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(102, 126, 234, 0.9); 
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            align-items: center; justify-content: center;
+            color: white; flex-direction: column;
+        }
+        #splash.show { display: flex; }
+        .splash-logo { width: 65px; height: 65px; margin-bottom: 18px; }
+        .splash-text p { font-size: 1em; margin-bottom: 10px; }
+        .status-line { font-size: 0.85em; opacity: 0.85; }
+        .progress-bar {
+            width: 200px; height: 4px; background: rgba(255,255,255,0.2);
+            border-radius: 2px; overflow: hidden; margin: 10px auto 0;
+        }
+        .progress-bar-inner {
+            height: 100%; background: white;
+            animation: loading 2.2s infinite ease-in-out;
+        }
+        @keyframes loading {
+            0% { width: 0%; } 30% { width: 35%; } 70% { width: 65%; } 100% { width: 100%; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) { /* Ajustado ponto de quebra */
+            .audit-grid { grid-template-columns: 1fr; }
+            .right-panel { margin-top: 20px; } /* Adiciona espaço quando empilhado */
+        }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.8em; } .header p { font-size: 0.95em; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .btn { width: 100%; margin-bottom: 8px; }
+            .main-container { padding: 12px; }
+            .card-shared { padding: 15px; }
+            .modal-content { width: 95%; }
+            .form-label {font-size: 0.85rem;}
+            .form-control, textarea.form-control {font-size: 0.85rem;}
+            #transcricao { min-height: 180px; }
+            #reclamacao { min-height: 60px; }
+        }
+        
+        .result-procedente .modal-header { background: #dc3545; color: white; } /* Mantido vermelho para procedente */
+        .result-improcedente .modal-header,
+        .result-comentário-positivo-confirmado .modal-header { background: #28a745; color: white; } /* Mantido verde para improcedente/elogio */
+        
+        .feedback-table {
+            width: 100%; border-collapse: collapse; margin-top: 12px;
+            font-size: 0.95em; /* Aumentado o tamanho da fonte */
+        }
+        .feedback-table th, .feedback-table td { border: 1px solid #e9ecef; padding: 7px 10px; text-align: left; } /* Aumentado o padding */
+        .feedback-table th { background-color: #f8f9fa; font-weight: 500; }
+        .conclusao {
+            margin-top: 12px; /* Aumentado o top margin */
+            font-size: 1em; /* Aumentado o tamanho da fonte */
+        }
+        .conclusao strong { color: #343a40; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1>Audit.ai</h1>
+            <p>Auditor Inteligente de Atendimentos</p>
+        </div>
+  {% if session['usuario_tipo'] != 'agente' %}
+        <div class="toolbar">
+            <button onclick="limparAtendimento(event)" class="btn btn-danger">
+                <i class="fas fa-plus"></i> Novo Atendimento
+            </button>
+            <button type="submit" form="audit-form" class="btn btn-success" name="acao" value="analisar">
+                <i class="fas fa-search"></i> Analisar Atendimento
+            </button>
+            <button type="button" class="btn btn-primary" onclick="limparFormulario()">
+                <i class="fas fa-broom"></i> Limpar Formulário
+            </button>
+        </div>
+
+        <form id="audit-form" method="POST">
+            <input type="hidden" name="tipo_avaliacao" id="tipo_avaliacao" value="reclamacao">
+            
+            <div class="audit-grid">
+                <div class="left-panel">
+                    <div class="transcription-section card-shared">
+                        <h3 class="card-title-shared">
+                            <i class="fas fa-file-signature"></i> Transcrição do Atendimento
+                        </h3>
+                        <textarea name="transcricao" id="transcricao" class="form-control" required placeholder="Cole aqui a transcrição completa do atendimento...">{{ transcricao or '' }}</textarea>
+                    </div>
+                    
+                    <div class="comment-section card-shared">
+                        <h3 class="card-title-shared">
+                            <i class="fas fa-comments"></i> Comentário do Cliente
+                        </h3>
+                        <textarea name="reclamacao" id="reclamacao" class="form-control" placeholder="Digite aqui o comentário ou reclamação do cliente...">{{ reclamacao or '' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div id="resumo-dinamico" class="summary-card card-shared" style="display: {% if info %}block{% else %}none{% endif %};">
+                        <h3 class="card-title-shared">
+                            <i class="fas fa-clipboard-check"></i> Resumo Técnico
+                        </h3>
+                        <div class="summary-content">
+                            <div class="summary-item">
+                                <div class="summary-label">Nº Atend.:</div> <div class="summary-value" id="campo-numero">
+                                     {% if info and info.numero_atendimento and info.numero_atendimento != 'Não identificado' %}
+                                        {{ info.numero_atendimento }}
+                                    {% else %}
+                                        <input type="text" name="numero_atendimento_manual" class="form-control form-control-sm" placeholder="Manual" value="{{ request.form.get('numero_atendimento_manual', '') }}">
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">Cód. Cli.:</div> <div class="summary-value" id="campo-codigo">
+                                    {% if info and info.codigo_cliente and info.codigo_cliente != 'Não identificado' %}
+                                        {{ info.codigo_cliente }}
+                                    {% else %}
+                                        <input type="text" name="codigo_cliente_manual" class="form-control form-control-sm" placeholder="Manual" value="{{ request.form.get('codigo_cliente_manual', '') }}">
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">Ag. Principal:</div> <div class="summary-value" id="campo-nome-agente">{{ info.nome_agente if info else '-' }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">E-mail:</div>
+                                <div class="summary-value" id="campo-email-agente">{{ info.email_agente if info else '-' }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">Equipe:</div>
+                                <div class="summary-value" id="campo-equipe">{{ info.equipe if info else '-' }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">Início:</div> <div class="summary-value" id="campo-hora-inicio">{{ info.hora_inicio if info else '-' }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">T. Total:</div> <div class="summary-value" id="campo-tempo-total">{{ info.tempo_total if info else '-' }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">T. Médio Resp.:</div>
+                                <div class="summary-value" id="campo-tempo-medio">{{ info.tempo_medio_resposta if info else '-' }}</div>
+                            </div>
+                            <div class="summary-item" style="grid-column: 1 / -1;">
+                                <div class="summary-label">Participantes:</div>
+                                <div class="summary-value" id="campo-participantes" style="height: auto; min-height: 1.5em; line-height: normal;">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="instrucao-resumo" class="placeholder-empty card-shared" style="display: {% if info %}none{% else %}flex{% endif %};">
+                        <div class="placeholder-content">
+                            <div class="placeholder-icon"><i class="fas fa-paste"></i></div>
+                            <p>Cole a transcrição para visualizar o resumo.</p>
+                        </div>
+                    </div>
+
+                    <div class="agent-selection-card card-shared">
+                        <h3 class="card-title-shared">
+                            <i class="fas fa-user-check"></i> Auditoria Específica
+                        </h3>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Selecionar Agente:</label>
+                            <div id="lista-agentes-para-selecao" class="agent-selection-container">
+                                </div>
+                            <p id="mensagem-nenhum-agente-extraido" style="color: #6c757d; font-size:0.85em;">
+                                Cole a transcrição para ver os agentes.
+                            </p>
+                            <small class="form-text">
+                                Deixe "Análise geral" selecionado para não focar em um agente.
+                            </small>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label class="form-label">Estrelas do Agente Selecionado:</label>
+                            <div class="star-rating-container" id="visual-star-rating">
+                                <i class="fas fa-star star" data-value="1"></i>
+                                <i class="fas fa-star star" data-value="2"></i>
+                                <i class="fas fa-star star" data-value="3"></i>
+                                <i class="fas fa-star star" data-value="4"></i>
+                                <i class="fas fa-star star" data-value="5"></i>
+                            </div>
+                            <input type="hidden" name="estrelas_agente_especifico" id="estrelas_agente_especifico_hidden_input" value="{{ estrelas_agente_especifico or '' }}">
+                            <small class="form-text">Avaliação em estrelas do agente selecionado (se aplicável).</small>
+                        </div>
+                    </div>
+                </div> </div> </form>
+    </div> <div id="modalResultado" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitulo">Resultado da Análise</h2>
+                <button type="button" class="close-button" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="modal-body" id="modalConclusao">
+                </div>
+            <div class="modal-footer">
+                <form action="{{ url_for('main.avaliar_parecer') }}" method="POST" style="display:flex; gap:10px; width:100%;"> 
+                    <input type="hidden" name="auditoria_id" id="auditoriaId" value="{{ resultado.id if resultado else '' }}">
+                    <span style="margin-right:auto; align-self:center;">Essa análise está correta?</span>
+                    <button type="submit" name="avaliacao" value="correto" class="btn btn-success">
+                        <i class="fas fa-thumbs-up"></i> Correto
+                    </button>
+                    <button type="submit" name="avaliacao" value="errado" class="btn btn-danger">
+                        <i class="fas fa-thumbs-down"></i> Errado
+                    </button>
+                    <button id="btnFecharModal" type="button" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Fechar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+  {% endif %}
+    <div id="splash">
+        <div class="splash-container">
+             <svg class="splash-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="40" fill="#667eea" opacity="0.8"></circle>
+                <path d="M50,15 A35,35 0 0,1 85,50" fill="none" stroke="white" stroke-width="4" stroke-linecap="round">
+                    <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="1.5s" repeatCount="indefinite" />
+                </path>
+                <path d="M50,15 A35,35 0 0,0 15,50" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.6">
+                    <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="2s" repeatCount="indefinite" />
+                </path>
+                 <text x="50" y="58" text-anchor="middle" fill="white" font-size="18" font-weight="bold" font-family="Poppins, sans-serif">AI</text>
+            </svg>
+            <div class="splash-text" style="color:white; margin-top:15px;">
+                <p style="font-size: 1.1em; margin-bottom: 10px;">Aguarde... <strong>Audit.ai</strong> está analisando...</p>
+                <span class="status-line" style="font-size:0.9em; opacity:0.85;">Processando informações</span>
+                <div class="progress-bar" style="width: 220px; height: 6px; background: rgba(255,255,255,0.2); border-radius:3px; overflow:hidden; margin:10px auto 0;">
+                    <div class="progress-bar-inner" style="height:100%; background:white; animation:loading 2s infinite ease-in-out;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const textarea = document.getElementById("transcricao");
+        const resumoBox = document.getElementById("resumo-dinamico");
+        const instrucaoBox = document.getElementById("instrucao-resumo");
+        
+        const campoNumeroValueDiv = document.getElementById("campo-numero"); 
+        const campoCodigoValueDiv = document.getElementById("campo-codigo"); 
+
+        const visualStarContainer = document.getElementById("visual-star-rating");
+        const hiddenStarInput = document.getElementById("estrelas_agente_especifico_hidden_input");
+        const stars = visualStarContainer ? visualStarContainer.querySelectorAll(".star") : [];
+        let currentRating = 0;
+
+        const containerSelecaoAgentes = document.getElementById("lista-agentes-para-selecao");
+        const msgNenhumAgente = document.getElementById("mensagem-nenhum-agente-extraido");
+
+        function setStars(rating) {
+            if (!stars) return;
+            stars.forEach(star => {
+                star.classList.toggle("selected", parseInt(star.dataset.value) <= rating);
+                star.classList.remove("hovered");
+            });
+        }
+
+        function hoverStars(rating) {
+            if (!stars) return;
+            stars.forEach(star => {
+                star.classList.toggle("hovered", parseInt(star.dataset.value) <= rating);
+            });
+        }
+        
+        if (visualStarContainer && stars.length > 0) {
+            stars.forEach(star => {
+                star.addEventListener("mouseover", () => hoverStars(parseInt(star.dataset.value)));
+                star.addEventListener("mouseout", () => setStars(currentRating));
+                star.addEventListener("click", () => {
+                    currentRating = parseInt(star.dataset.value);
+                    if(hiddenStarInput) hiddenStarInput.value = currentRating;
+                    setStars(currentRating);
+                });
+            });
+            if (hiddenStarInput && hiddenStarInput.value) {
+                const initialRating = parseInt(hiddenStarInput.value);
+                if (!isNaN(initialRating) && initialRating >=1 && initialRating <=5) { // Valida o range
+                    currentRating = initialRating;
+                    setStars(currentRating);
+                } else {
+                    currentRating = 0; // Reseta se o valor não for válido
+                    if(hiddenStarInput) hiddenStarInput.value = ""; // Limpa o input oculto
+                }
+            }
+        }
+
+        if (!textarea) {
+            console.error("Elemento textarea da transcrição não encontrado.");
+            return;
+        }
+
+        textarea.addEventListener("input", () => {
+            const texto = textarea.value.trim(); 
+            
+            if (texto.length < 10) { 
+                resetSummaryValues(); 
+                if(resumoBox) resumoBox.style.display = "none";
+                if(instrucaoBox) instrucaoBox.style.display = "flex";
+                return;
+            }
+
+            if(resumoBox) resumoBox.style.display = "block";
+            if(instrucaoBox) instrucaoBox.style.display = "none";
+
+            console.log('Disparando fetch para /extrair...');
+
+            fetch("{{ url_for('main.extrair') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ transcricao: texto })
+            })
+            .then(res => {
+                console.log('Resposta do fetch /extrair - Status:', res.status);
+                if (!res.ok) {
+                    return res.text().then(text => { 
+                        console.error('Erro no fetch /extrair (texto):', text);
+                        throw new Error(`Erro ${res.status}: ${text || res.statusText}`);
+                    });
+                }
+                return res.json();
+            })
+            .then(data => {
+                console.log('Dados recebidos de /extrair:', data);
+                updateSummaryValues(data);
+            })
+            .catch((error) => { 
+                console.error('Erro no fetch /extrair ou no processamento .then():', error);
+                resetSummaryValues(); 
+                if (msgNenhumAgente) {
+                     msgNenhumAgente.textContent = "Erro ao extrair. Verifique o console."; 
+                     msgNenhumAgente.style.display = "block";
+                }
+            });
+        });
+
+        function updateSummaryValues(data) {
+            console.log('Atualizando resumo com dados:', data); 
+
+            if (campoNumeroValueDiv) {
+                if (data && data.numero_atendimento && data.numero_atendimento !== "Não identificado") {
+                    campoNumeroValueDiv.innerHTML = data.numero_atendimento;
+                } else {
+                    campoNumeroValueDiv.innerHTML = `<input type="text" name="numero_atendimento_manual" class="form-control form-control-sm" placeholder="Manual" value="{{ request.form.get('numero_atendimento_manual', '') }}">`;
+                }
+            }
+            if (campoCodigoValueDiv) {
+                if (data && data.codigo_cliente && data.codigo_cliente !== "Não identificado") {
+                    campoCodigoValueDiv.innerHTML = data.codigo_cliente;
+                } else {
+                    campoCodigoValueDiv.innerHTML = `<input type="text" name="codigo_cliente_manual" class="form-control form-control-sm" placeholder="Manual" value="{{ request.form.get('codigo_cliente_manual', '') }}">`;
+                }
+            }
+
+            const idsDosCampos = {
+                "campo-nome-agente": data && data.nome_agente, 
+                "campo-email-agente": data && data.email_agente,
+                "campo-equipe": data && data.equipe,
+                "campo-hora-inicio": data && data.hora_inicio,
+                "campo-tempo-total": data && data.tempo_total,
+                "campo-tempo-medio": data && data.tempo_medio_resposta
+            };
+            for (const id in idsDosCampos) {
+                const elemento = document.getElementById(id);
+                if (elemento) elemento.textContent = idsDosCampos[id] || '-';
+            }
+
+            const campoParticipantesResumo = document.getElementById("campo-participantes");
+            if (campoParticipantesResumo) {
+                if (data && data.participantes && data.participantes.length > 0) {
+                    let participantesHtml = "<ul>";
+                    data.participantes.forEach(p => {
+                        let nomeDisplay = p.nome || (p.email ? p.email.split('@')[0] : 'Desconhecido');
+                        participantesHtml += `<li>${nomeDisplay} (${p.email})</li>`;
+                    });
+                    participantesHtml += "</ul>";
+                    campoParticipantesResumo.innerHTML = participantesHtml;
+                } else if (data && data.email_agente && data.email_agente !== "Não identificado") {
+                     let nomeDisplayPrincipal = data.nome_agente || (data.email_agente ? data.email_agente.split('@')[0] : 'Desconhecido');
+                    campoParticipantesResumo.textContent = `${nomeDisplayPrincipal} (${data.email_agente})`;
+                } else {
+                    campoParticipantesResumo.textContent = "Nenhum agente identificado.";
+                }
+            }
+            
+            if (containerSelecaoAgentes && msgNenhumAgente) {
+                containerSelecaoAgentes.innerHTML = ''; 
+                if (data && data.participantes && data.participantes.length > 0) {
+                    msgNenhumAgente.style.display = "none"; 
+                    
+                    const radioIdNenhum = "agente_radio_nenhum";
+                    const radioDivNenhum = document.createElement('div');
+                    radioDivNenhum.classList.add('radio-option-agent');
+                    const radioNenhum = document.createElement('input');
+                    radioNenhum.type = "radio";
+                    radioNenhum.name = "email_agente_especifico";
+                    radioNenhum.id = radioIdNenhum;
+                    radioNenhum.value = ""; 
+                    
+                    let algumAgenteEspecificoSelecionado = false;
+                    let emailSelecionadoPeloFlask = "{{ request.form.get('email_agente_especifico', '') }}"; 
+                    if (emailSelecionadoPeloFlask && emailSelecionadoPeloFlask !== "") {
+                        algumAgenteEspecificoSelecionado = true;
+                    }
+                    radioNenhum.checked = !algumAgenteEspecificoSelecionado; 
+
+                    const labelNenhum = document.createElement('label');
+                    labelNenhum.htmlFor = radioIdNenhum;
+                    labelNenhum.textContent = " Realizar análise geral"; 
+                    radioDivNenhum.appendChild(radioNenhum);
+                    radioDivNenhum.appendChild(labelNenhum);
+                    containerSelecaoAgentes.appendChild(radioDivNenhum);
+                    
+                    data.participantes.forEach((agente, index) => {
+                        const radioId = `agente_radio_${index}`;
+                        const radioDiv = document.createElement('div');
+                        radioDiv.classList.add('radio-option-agent');
+                        const radioButton = document.createElement('input');
+                        radioButton.type = "radio";
+                        radioButton.name = "email_agente_especifico";
+                        radioButton.id = radioId;
+                        radioButton.value = agente.email;
+                        
+                        if (agente.email === emailSelecionadoPeloFlask) {
+                            radioButton.checked = true;
+                        }
+
+                        const label = document.createElement('label');
+                        label.htmlFor = radioId;
+                        let nomeDisplay = agente.nome || (agente.email ? agente.email.split('@')[0] : 'Desconhecido');
+                        label.textContent = ` ${nomeDisplay} (${agente.email})`;
+                        radioDiv.appendChild(radioButton);
+                        radioDiv.appendChild(label);
+                        containerSelecaoAgentes.appendChild(radioDiv);
+                    });
+                } else {
+                    msgNenhumAgente.textContent = "Nenhum agente para seleção."; 
+                    msgNenhumAgente.style.display = "block";
+                }
+            }
+        }
+
+        function resetSummaryValues() {
+            console.log('Resetando valores do resumo...'); 
+            const idsParaResetar = [
+                "campo-nome-agente", "campo-email-agente", "campo-equipe",
+                "campo-hora-inicio", "campo-tempo-total", "campo-tempo-medio",
+                "campo-participantes"
+            ];
+            idsParaResetar.forEach(id => {
+                const elemento = document.getElementById(id);
+                if (elemento) elemento.textContent = '-';
+            });
+
+            if (campoNumeroValueDiv) { 
+                 campoNumeroValueDiv.innerHTML = `<input type="text" name="numero_atendimento_manual" class="form-control form-control-sm" placeholder="Manual" value="">`;
+            }
+            if (campoCodigoValueDiv) { 
+                campoCodigoValueDiv.innerHTML = `<input type="text" name="codigo_cliente_manual" class="form-control form-control-sm" placeholder="Manual" value="">`;
+            }
+            
+            if (containerSelecaoAgentes) {
+                containerSelecaoAgentes.innerHTML = ''; 
+            }
+            if (msgNenhumAgente) {
+                 msgNenagem.textContent = "Cole a transcrição para ver os agentes participantes."; 
+                 msgNenhumAgente.style.display = "block"; 
+            }
+
+            if (hiddenStarInput) hiddenStarInput.value = "";
+            currentRating = 0;
+            setStars(0);
+        }
+        
+        let initialTranscricao = "";
+        {% if transcricao %}
+            initialTranscricao = {{ transcricao | tojson | safe }};
+        {% elif request.form.transcricao %}
+            initialTranscricao = {{ request.form.transcricao | tojson | safe }};
+        {% endif %}
+
+        if (textarea && initialTranscricao.trim().length >=10) {
+            textarea.value = initialTranscricao; 
+            const eventoInput = new Event('input', { bubbles: true, cancelable: true });
+            textarea.dispatchEvent(eventoInput);
+        } else {
+            if(resumoBox) resumoBox.style.display = "none";
+            if(instrucaoBox) instrucaoBox.style.display = "flex";
+            if (msgNenhumAgente) {
+                msgNenhumAgente.textContent = "Cole a transcrição para ver os agentes participantes.";
+                msgNenhumAgente.style.display = "block";
+                if(containerSelecaoAgentes) containerSelecaoAgentes.innerHTML = '';
+            }
+        }
+
+        const form = document.getElementById("audit-form");
+        if (form) {
+            form.addEventListener("submit", (e) => {
+                const activeElement = document.activeElement; 
+                const splash = document.getElementById("splash");
+                if (activeElement && activeElement.name === "acao" && activeElement.value === "analisar" && splash) {
+                    splash.style.display = "flex"; 
+                }
+            });
+        }
+        
+        window.limparFormulario = function () {
+            console.log('Limpando formulário...'); 
+            if(textarea) textarea.value = "";
+            const reclamacaoTextarea = document.getElementById("reclamacao");
+            if(reclamacaoTextarea) reclamacaoTextarea.value = "";
+            
+            const radios = document.querySelectorAll('input[name="email_agente_especifico"]');
+            radios.forEach(radio => radio.checked = false);
+            const radioGeral = document.getElementById("agente_radio_nenhum");
+            if(radioGeral) radioGeral.checked = true; 
+
+            resetSummaryValues(); 
+            if(resumoBox) resumoBox.style.display = "none";
+            if(instrucaoBox) instrucaoBox.style.display = "flex";
+            
+            const resultadoCard = document.querySelector(".result-card"); 
+            if (resultadoCard) resultadoCard.remove(); 
+            
+            const modal = document.getElementById('modalResultado'); 
+            if (modal) modal.style.display = "none";
+
+            window.scrollTo(0, 0);
+        };
+
+        const modal = document.getElementById('modalResultado');
+        if (modal) { 
+            const spanClose = modal.querySelector('.close-button'); 
+            const btnFecharModal = document.getElementById('btnFecharModal');
+
+            if(spanClose) {
+                spanClose.onclick = function () {
+                    modal.style.display = "none";
+                };
+            }
+            if(btnFecharModal) {
+                btnFecharModal.onclick = function() { 
+                    modal.style.display = "none";
+                };
+            }
+            window.onclick = function (event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            };
+
+            {% if resultado %} 
+                {% if resultado.status == 'sucesso' %} 
+                  modal.style.display = "flex";
+                  const modalTituloEl = document.getElementById('modalTitulo');
+                  if (modalTituloEl) modalTituloEl.innerHTML = `{% if resultado.parecer.lower() == 'procedente' %}<i class="fas fa-exclamation-triangle"></i> Parecer Final: {{ resultado.parecer }}{% elif resultado.parecer.lower() == 'comentário positivo confirmado' %}<i class="fas fa-check-circle"></i> Parecer Final: {{ resultado.parecer }}{% else %}<i class="fas fa-check-circle"></i> Parecer Final: {{ resultado.parecer }}{% endif %}`;
+                  
+                  let feedbackHtml = `{{ feedback | safe }}`;
+                  const modalConclusaoEl = document.getElementById('modalConclusao');
+                  if(modalConclusaoEl) modalConclusaoEl.innerHTML = feedbackHtml;
+                  
+                  const auditoriaIdEl = document.getElementById('auditoriaId');
+                  if(auditoriaIdEl && "{{ resultado.id }}") auditoriaIdEl.value = `{{ resultado.id }}`;
+                  
+                  const modalContent = modal.querySelector('.modal-content');
+                  if(modalContent) {
+                    modalContent.classList.remove('result-procedente', 'result-improcedente', 'result-comentário-positivo-confirmado'); 
+                    if (resultado.parecer.lower() == 'procedente') {
+                        modalContent.classList.add('result-procedente');
+                    } else if (resultado.parecer.lower() == 'comentário positivo confirmado') {
+                         modalContent.classList.add('result-comentário-positivo-confirmado'); 
+                    }
+                    else { 
+                        modalContent.classList.add('result-improcedente');
+                    }
+                  }
+                {% elif resultado.status == 'erro' %}
+                    modal.style.display = "flex";
+                    const modalTituloErrEl = document.getElementById('modalTitulo');
+                    if(modalTituloErrEl) modalTituloErrEl.innerHTML = `<i class="fas fa-exclamation-circle"></i> Erro na Análise`;
+                    
+                    const modalConclusaoErrEl = document.getElementById('modalConclusao');
+                    if(modalConclusaoErrEl) modalConclusaoErrEl.innerHTML = `<p>{{ resultado.justificativa | escape }}</p>`;
+                    
+                    const modalFooterForm = modal.querySelector('.modal-footer form');
+                    if(modalFooterForm) modalFooterForm.style.display = 'none';
+                {% endif %}
+            {% endif %}
+        } 
+    });
+
+    function limparAtendimento(event) {
+        if (event) event.preventDefault();
+        if (typeof window.limparFormulario === 'function') {
+            window.limparFormulario(); 
+        }
+    }
+</script>
+</body>
+</html>
+{% endblock %}

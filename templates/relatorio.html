@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Atendimento Auditado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f8f8f8; }
+        .logo { max-height: 60px; margin-bottom: 20px; }
+        .header, .footer { text-align: center; margin-bottom: 20px; }
+        .info-bloco { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 5px #ccc; margin-bottom: 20px; }
+        .parecer { font-size: 1.5rem; font-weight: bold; padding: 10px 15px; border-radius: 5px; display: inline-block; }
+        .procedente { background-color: #ffdddd; color: #a00; }
+        .improcedente { background-color: #ddffdd; color: #060; }
+        .elogio { background-color: #ddeeff; color: #005; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 14px; }
+        th { background-color: #f0f0f0; }
+        .nota { font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="logo">
+    <h2>Relatório de Atendimento Auditado</h2>
+</div>
+
+<div class="info-bloco">
+    <p><strong>Agente:</strong> {{ auditoria.agente_nome }} ({{ auditoria.agente_email }})</p>
+    <p><strong>Supervisor:</strong> {{ auditoria.supervisor }}</p>
+    <p><strong>Equipe:</strong> {{ auditoria.equipe }}</p>
+    <p><strong>Atendimento Nº:</strong> {{ auditoria.numero_atendimento }} | <strong>Código Cliente:</strong> {{ auditoria.codigo_cliente }}</p>
+    <p><strong>Pontuação Final:</strong> {{ nota_final }}</p>
+
+</div>
+
+<div class="info-bloco">
+    <p class="parecer {% if auditoria.parecer == 'Procedente' %}procedente{% elif auditoria.parecer == 'Improcedente' %}improcedente{% else %}elogio{% endif %}">
+        {{ auditoria.parecer }}
+    </p>
+    <p style="margin-top: 15px;"><strong>Justificativa Final:</strong><br>{{ auditoria.justificativa }}</p>
+</div>
+
+{% if avaliacoes %}
+<div class="info-bloco">
+    <h3>Critérios Avaliados</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Critério</th>
+                <th>Nota</th>
+                <th>Justificativa</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in avaliacoes %}
+            <tr>
+                <td>{{ item.criterio }}</td>
+                <td class="nota">{{ item.nota }}</td>
+                <td>{{ item.justificativa }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="footer">
+    <p>Data da auditoria: {{ data_auditoria }}</p>
+</div>
+
+</body>
+</html>

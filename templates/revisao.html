@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Revisão de Auditorias - audit.AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9fbff;
+            margin: 0;
+            padding: 2rem;
+        }
+        h1 {
+            color: #2563eb;
+        }
+        .btn {
+            background: #2563eb;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+            display: inline-block;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .card h3 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+        .card p {
+            margin: 0.4rem 0;
+            line-height: 1.4;
+        }
+        .card small {
+            color: #64748b;
+        }
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        .tag.procedente { background: #ef4444; }
+        .tag.improcedente { background: #10b981; }
+        .tag.comentáriopositivoconfirmado { background: #3b82f6; }
+    </style>
+</head>
+<body>
+    <a href="/" class="btn">⬅️ Voltar</a>
+    <h1>🔍 Painel de Revisão - Análises Marcadas como Erradas</h1>
+
+    {% for auditoria in auditorias %}
+    <div class="card">
+        <h3>📅 {{ auditoria.data }} — Atendimento #{{ auditoria.numero_atendimento or "N/D" }}</h3>
+        <p><strong>Agente:</strong> {{ auditoria.agente_nome or "Não identificado" }} | <strong>Supervisor:</strong> {{ auditoria.supervisor or "N/D" }}</p>
+        <p><strong>Comentário do Cliente:</strong><br>{{ auditoria.reclamacao or "N/D" }}</p>
+        <p><strong>Transcrição:</strong><br>{{ auditoria.transcricao or "N/D" }}</p>
+        <p>
+            <strong>Parecer:</strong>
+            <span class="tag {{ auditoria.parecer|lower|replace(' ', '') }}">
+                {{ auditoria.parecer }}
+            </span>
+        </p>
+        <p><strong>Justificativa:</strong><br>{{ auditoria.justificativa }}</p>
+        <small>ID interno: {{ auditoria.id }}</small>
+    </div>
+    {% else %}
+    <p>Nenhuma análise foi marcada como errada até o momento.</p>
+    {% endfor %}
+</body>
+</html>

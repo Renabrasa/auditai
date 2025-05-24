@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+
+<style>
+    body {
+        font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .card {
+        width: 48% !important;
+        margin-bottom: 30px;
+    }
+
+    .card-body {
+        height: 280px;
+        position: relative;
+        padding-bottom: 30px;
+    }
+
+    .card-footer {
+        padding-top: 10px;
+        font-size: 0.8rem;
+    }
+</style>
+
+<div class="splash-text">
+    <h1>Dashboard Gerencial</h1>
+</div>
+
+<div class="row" style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+
+    <div class="card" style="width: 48%;">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-chart-pie"></i> Total de atendimentos auditados</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="graficoTotal"></canvas>
+        </div>
+        <div class="card-footer">
+            Comentário positivo confirmado: <span id="qtd_pos_confirmado">0</span> |
+            Improcedente: <span id="qtd_improcedente">0</span> |
+            Procedente: <span id="qtd_procedente">0</span>
+        </div>
+    </div>
+
+    <div class="card" style="width: 48%;">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-search"></i> Reclamações procedentes por cliente</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="graficoClientes"></canvas>
+        </div>
+        <div class="card-footer">
+            Clientes com reclamações procedentes
+        </div>
+    </div>
+
+    <div class="card" style="width: 48%;">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-users"></i> Avaliações por Supervisor</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="graficoEquipe"></canvas>
+        </div>
+        <div class="card-footer">
+            Desempenho de pareceres por supervisor
+        </div>
+    </div>
+
+    <div class="card" style="width: 48%;">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-user-check"></i> Auditorias por Agente (Parecer)</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="graficoResponsavel"></canvas>
+        </div>
+        <div class="card-footer">
+            Status: Procedente | Improcedente | Elogiado
+        </div>
+    </div>
+
+    <div class="card" style="width: 48%;">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-tasks"></i> Média por Critério de Julgamento</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="graficoCriterios"></canvas>
+        </div>
+        <div class="card-footer">
+            Média das notas por critério (menor para maior)
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<script>
+    // Definição global para todos os gráficos
+    Chart.defaults.font.size = 10;
+    Chart.defaults.plugins.legend.labels.boxWidth = 10;
+
+    // Adicione antes de criar os gráficos
+    Chart.defaults.font.size = 11;
+    Chart.defaults.plugins.legend.position = 'bottom';
+    Chart.defaults.plugins.legend.labels.padding = 15;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true; // Usa pontos em vez de quadrados na legenda
+    Chart.defaults.plugins.tooltip.padding = 10;
+
+    // Adicionando espaço para a legenda em todos os gráficos
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+            padding: {
+                bottom: 20 // Espaço adicional na parte inferior de todos os gráficos
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    boxWidth: 10,
+                    font: {
+                        size: 11
+                    }
+                }
+            }
+        }
+    };
+
+
+    // Variáveis passadas do Flask (agora com todos os dados necessários)
+    const pareceres_labels_data = {{ pareceres | safe }}; // Agora labels já normalizadas
+    const pareceres_qtd_data = {{ qtd_parecer | safe }}; // Quantidades correspondentes
+    const clientes = {{ clientes | safe }};
+    const qtd_clientes = {{ qtd_clientes | safe }};
+    const supervisor_nomes = {{ supervisor_nomes | safe }};
+    const supervisor_procedente = {{ supervisor_procedente | safe }};
+    const supervisor_improcedente = {{ supervisor_improcedente | safe }};
+    const supervisor_positivo = {{ supervisor_positivo | safe }};
+    const agentes_nomes_responsavel = {{ agentes_nomes_responsavel | safe }};
+    const agentes_qtd_procedente = {{ agentes_qtd_procedente | safe }};
+    const agentes_qtd_improcedente = {{ agentes_qtd_improcedente | safe }};
+    const agentes_qtd_elogiado = {{ agentes_qtd_elogiado | safe }};
+    const criterio_labels = {{ criterio_labels | safe }};
+    const criterio_medias = {{ criterio_medias | safe }};
+
+
+    // Populando o footer do Card 1 de forma mais robusta
+    // Cria um mapa de labels para quantidades para fácil acesso
+    const pareceresMap = {};
+    pareceres_labels_data.forEach((label, index) => {
+        pareceresMap[label] = pareceres_qtd_data[index];
+    });
+
+    document.getElementById("qtd_pos_confirmado").textContent = pareceresMap["Comentário positivo confirmado"] || 0;
+    document.getElementById("qtd_improcedente").textContent = pareceresMap["Improcedente"] || 0;
+    document.getElementById("qtd_procedente").textContent = pareceresMap["Procedente"] || 0;
+
+
+    // Gráfico 1: Pizza total - Versão melhorada
+    new Chart(document.getElementById("graficoTotal"), {
+        type: "doughnut",
+        data: {
+            labels: pareceres_labels_data, // Usa as labels normalizadas
+            datasets: [{
+                data: pareceres_qtd_data, // Usa as quantidades normalizadas
+                backgroundColor: ["#f9c74f", "#10b981", "#e63946"] // Ordem das cores ajustada para Positivo, Procedente, Improcedente 
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '45%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    align: 'center',
+                    labels: {
+                        padding: 20,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 12
+                    },
+                    formatter: (val, ctx) => {
+                        const total = ctx.chart._metasets[0].total;
+                        const percentage = (val * 100 / total).toFixed(1);
+                        return percentage + '%';
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.chart._metasets[0].total;
+                            const percentage = (value * 100 / total).toFixed(1);
+                            return `${label}: <span class="math-inline">\{value\} \(</span>{percentage}%)`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+
+    // Gráfico 2: Clientes
+    new Chart(document.getElementById("graficoClientes"), {
+        type: "bar",
+        data: {
+            labels: clientes,
+            datasets: [{
+                label: "Reclamações procedentes",
+                data: qtd_clientes,
+                backgroundColor: "#e63946" // Vermelho para 'procedente'
+            }]
+        },
+        options: {
+            ...chartOptions,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico 3: Equipes
+    new Chart(document.getElementById("graficoEquipe"), {
+        type: "bar",
+        data: {
+            labels: supervisor_nomes,
+            datasets: [
+                {
+                    label: "Procedente",
+                    data: supervisor_procedente,
+                    backgroundColor: "#e63946"
+                },
+                {
+                    label: "Improcedente",
+                    data: supervisor_improcedente,
+                    backgroundColor: "#10b981"
+                },
+                {
+                    label: "Positivo Confirmado",
+                    data: supervisor_positivo,
+                    backgroundColor: "#f9c74f"
+                }]
+        },
+        options: {
+            ...chartOptions,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico 4: Auditorias por Agente (Parecer)
+    const emailsTruncadosResponsavel = agentes_nomes_responsavel.map(email => {
+        if (!email) return "Não especificado";
+        const username = email.split('@')[0];
+        return username.length > 12 ? username.substring(0, 12) + '...' : username;
+    });
+
+    new Chart(document.getElementById("graficoResponsavel"), {
+        type: "bar",
+        data: {
+            labels: emailsTruncadosResponsavel,
+            datasets: [
+                {
+                    label: "Procedente",
+                    data: agentes_qtd_procedente,
+                    backgroundColor: "#e63946",
+                    barPercentage: 0.5,
+                    categoryPercentage: 1
+                },
+                {
+                    label: "Improcedente",
+                    data: agentes_qtd_improcedente,
+                    backgroundColor: "#10b981",
+                    barPercentage: 0.5,
+                    categoryPercentage: 1
+                },
+                {
+                    label: "Elogiado",
+                    data: agentes_qtd_elogiado,
+                    backgroundColor: "#f9c74f",
+                    barPercentage: 0.5,
+                    categoryPercentage: 1
+                }
+            ]
+        },
+        options: {
+            ...chartOptions,
+            indexAxis: 'x',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    stacked: false
+                },
+                y: {
+                    stacked: false
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function (tooltipItems) {
+                            if (tooltipItems.length > 0) {
+                                const dataIndex = tooltipItems[0].dataIndex;
+                                return agentes_nomes_responsavel[dataIndex];
+                            }
+                            return '';
+                        },
+                        label: function (context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.x !== null) {
+                                label += context.parsed.x;
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico 5: Desempenho por Critério de Julgamento
+    new Chart(document.getElementById("graficoCriterios"), {
+        type: "bar",
+        data: {
+            labels: criterio_labels,
+            datasets: [{
+                label: "Nota Média",
+                data: criterio_medias,
+                backgroundColor: "#3b82f6" // Cor azul mais neutra
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 10, // A nota máxima é 10
+                    title: {
+                        display: true,
+                        text: 'Nota Média'
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return `${context.label}: ${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+</script>
+
+{% endblock %}

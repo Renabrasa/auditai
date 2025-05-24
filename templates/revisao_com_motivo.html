@@ -1,0 +1,79 @@
+
+{% extends "base.html" %}
+{% block conteudo %}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+    </style>
+    <meta charset="UTF-8">
+    <title>Revisão de Auditorias - audit.AI</title>
+    <!--style>
+        
+        h1 { color: #2563eb; }
+        .btn { background: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 5px; text-decoration: none; }
+        .card {
+            background: white; border-radius: 8px; padding: 1rem; margin-top: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .tag { padding: 0.3rem 0.6rem; font-size: 0.85rem; color: white; border-radius: 4px; }
+        .tag.procedente { background: #ef4444; }
+        .tag.improcedente { background: #10b981; }
+        .tag.comentáriopositivoconfirmado { background: #3b82f6; }
+        textarea {
+            width: 100%; min-height: 60px; padding: 0.5rem;
+            border: 1px solid #ccc; border-radius: 4px; resize: vertical;
+        }
+        form button {
+            margin-top: 0.5rem; background: #10b981; color: white;
+            border: none; padding: 0.4rem 0.9rem; border-radius: 4px;
+            font-size: 0.9rem; cursor: pointer;
+        }
+    </style-->
+
+   <div class="splash-text">
+        <h1>Painel de Revisão - Análises com Feedback de Erro</h1>
+    </div>
+    {% for auditoria in auditorias %}
+    <div class="card">
+        <h3>📅 {{ auditoria.data }} — Atendimento #{{ auditoria.numero_atendimento or "N/D" }}</h3>
+        <p><strong>Agente:</strong> {{ auditoria.agente_nome or "Não identificado" }} | <strong>Supervisor:</strong> {{ auditoria.supervisor or "N/D" }}</p>
+        <p><strong>Comentário do Cliente:</strong><br>{{ auditoria.reclamacao or "N/D" }}</p>
+        <p><strong>Transcrição:</strong><br>{{ auditoria.transcricao or "N/D" }}</p>
+        <p><strong>Parecer:</strong>
+            <span class="tag {{ auditoria.parecer|lower|replace(' ', '') }}">{{ auditoria.parecer }}</span>
+        </p>
+        <p><strong>Justificativa:</strong><br>{{ auditoria.justificativa }}</p>
+        <form method="POST" action="/revisao/salvar">
+            <input type="hidden" name="auditoria_id" value="{{ auditoria.id }}">
+            <label><strong>Por que a IA errou?</strong></label>
+            <textarea name="motivo">{{ auditoria.motivo_erro or "" }}</textarea>
+            <button type="submit" disabled>Salvar motivo</button>
+
+        </form>
+    </div>
+    {% else %}
+    <p>Nenhuma análise foi marcada como errada até o momento.</p>
+    {% endfor %}
+
+    
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll("form").forEach(form => {
+            const textarea = form.querySelector("textarea[name='motivo']");
+            const botao = form.querySelector("button[type='submit']");
+
+            if (textarea && botao) {
+                const valorOriginal = textarea.value;
+                textarea.addEventListener("input", () => {
+                    botao.disabled = (textarea.value.trim() === valorOriginal.trim());
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

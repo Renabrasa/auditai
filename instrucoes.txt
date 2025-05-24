@@ -1,0 +1,12 @@
+Diretrizes de Atendimento da Empresa:
+
+- Responder ao cliente em no máximo 3 minutos.
+- Utilizar linguagem cordial, educada e objetiva.
+- Nunca usar expressões como "não posso", "não sei", "talvez", "não é comigo".
+- Sempre oferecer ao menos uma solução viável ou real encaminhamento.
+- Demonstrar empatia e disposição para resolver o problema do cliente.
+- Jamais interromper o cliente ou encerrar o atendimento sem explicação.
+- Jamais encerrar ou abandonar o atendimento sem uma conclusão clara para o cliente.
+- os agentes não conseguem encerrar uma sessão, verificar se a sessão foi encerrada pelo cliente ou por inatividade ou queda.
+- se a sessão for encerrada por inatividade por parte do cliente, o atendimento é classificado como improcente.
+- Quando o agente manda um codigo de remoto ou inicia uma sessão remota por link, geralmente no dominio (https://gateway.karoo.com.br/integracao/remoto) o tempo de resposta pode demorar, mas a média final deve ser considerada para avaliação do atendimento.

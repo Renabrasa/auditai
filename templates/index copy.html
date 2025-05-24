@@ -1,0 +1,710 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit.ai | Auditor Inteligente</title>
+<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.png') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+<style>
+    body {
+        font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* Estilo para ações rápidas no topo */
+    .quick-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .quick-actions .btn-group {
+        display: flex;
+        gap: 10px;
+    }
+    
+    /* Modal de resultado */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal-content {
+        position: relative;
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border-radius: 10px;
+        width: 80%;
+        max-width: 800px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        animation: modalopen 0.4s;
+    }
+    
+    @keyframes modalopen {
+        from {opacity: 0; transform: translateY(-50px);}
+        to {opacity: 1; transform: translateY(0);}
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .modal-header h2 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .modal-body {
+        padding: 20px 0;
+    }
+    
+    .modal-footer {
+        padding-top: 15px;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+    }
+    
+    .result-procedente {
+        background-color: #ffebee;
+        border-left: 5px solid #f44336;
+    }
+    
+    .result-improcedente {
+        background-color: #e8f5e9;
+        border-left: 5px solid #4caf50;
+    }
+    
+    .modal-status {
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+    
+    .status-procedente {
+        background-color: #ffebee;
+        color: #c62828;
+    }
+    
+    .status-improcedente {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+</style>
+ 
+<!-- Conteúdo principal -->
+<main class="main-content">
+    <div class="page-header">
+        <div class="splash-text">
+            <h1>Audit.ai</h1>
+            <p>Auditor Inteligente de Atendimentos</p>
+        </div>
+    </div>
+
+    {% if session['usuario_tipo'] != 'agente' %}
+    <!-- Nova seção de ações rápidas -->
+    <div class="quick-actions">
+        <div class="btn-group">
+            <button onclick="limparAtendimento(event)" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Novo Atendimento
+            </button>
+            <button type="button" class="btn btn-success" id="btnAnalisarRapido">
+                <i class="fas fa-search"></i>
+                Analisar Atendimento
+            </button>
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-secondary" id="btnImportar">
+                <i class="fas fa-file-import"></i>
+                Importar
+            </button>
+            <button type="button" class="btn btn-info" id="btnExportar">
+                <i class="fas fa-file-export"></i>
+                Exportar
+            </button>
+        </div>
+    </div>
+    
+    <form method="POST" id="formAtendimento">
+        <input type="hidden" name="tipo_avaliacao" id="tipo_avaliacao" value="reclamacao">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <div class="card-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    Dados do Atendimento
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="transcricao" class="form-label">Transcrição do Atendimento</label>
+                    <div class="form-flex">
+                        <div class="form-column">
+                            <textarea name="transcricao" id="transcricao" class="form-control" rows="15"
+                                required></textarea>
+                        </div>
+                        <div class="form-column">
+                            <div id="resumo-dinamico" class="card summary-card" {% if info %}style="display: block;" {%
+                                else %}style="display: none;" {% endif %}>
+                                <h3><i class="fas fa-clipboard-list"></i> Resumo Técnico</h3>
+                                <div class="summary-content">
+                                    <div class="summary-item">
+                                        <div class="summary-label">Nº Atendimento:</div>
+                                        <div class="summary-value" id="campo-numero">
+                                            {% if info and info.numero_atendimento and info.numero_atendimento != 'Não
+                                            identificado' %}
+                                            {{ info.numero_atendimento }}
+                                            {% else %}
+                                            <input type="text" name="numero_atendimento_manual" class="form-control"
+                                                placeholder="Digite manualmente">
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="summary-item">
+                                        <div class="summary-label">Código do Cliente:</div>
+                                        <div class="summary-value" id="campo-codigo">
+                                            {% if info and info.codigo_cliente and info.codigo_cliente != 'Não
+                                            identificado' %}
+                                            {{ info.codigo_cliente }}
+                                            {% else %}
+                                            <input type="text" name="codigo_cliente_manual" class="form-control"
+                                                placeholder="Digite manualmente">
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="summary-item">
+                                        <div class="summary-label">Nome do Agente:</div>
+                                        <div class="summary-value">{{ info.nome_agente if info else '-' }}</div>
+                                    </div>
+                                    <div class="summary-item">
+                                        <div class="summary-label">E-mail:</div>
+                                        <div class="summary-value">{{ info.email_agente if info else '-' }}</div>
+                                    </div>
+                                    <div class="summary-item">
+                                        <div class="summary-label">Equipe:</div>
+                                        <div class="summary-value">{{ info.equipe if info else '-' }}</div>
+                                    </div>
+                                    <div class="summary-item">
+                                        <div class="summary-label">Hora de Início:</div>
+                                        <div class="summary-value">{{ info.hora_inicio if info else '-' }}</div>
+                                    </div>
+                                    <div class="summary-item">
+                                        <div class="summary-label">Tempo Total:</div>
+                                        <div class="summary-value">{{ info.tempo_total if info else '-' }}</div>
+                                    </div>
+                                    <div class="summary-item">
+                                        <div class="summary-label">Tempo Médio de Resposta:</div>
+                                        <div class="summary-value">{{ info.tempo_medio_resposta if info else '-' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="instrucao-resumo" class="card summary-card placeholder-empty" {% if info
+                                %}style="display: none;" {% else %}style="display: flex;" {% endif %}>
+                                <div class="placeholder-content">
+                                    <div class="placeholder-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <p>Digite a transcrição do atendimento para visualizar o resumo técnico</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reclamacao" class="form-label">Comentário do Cliente</label>
+                    <textarea name="reclamacao" id="reclamacao" class="form-control"
+                        rows="4">{{ reclamacao or '' }}</textarea>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-success" name="acao" value="analisar">
+                    <i class="fas fa-search"></i>
+                    Analisar Atendimento
+                </button>
+                <button type="button" class="btn btn-primary" onclick="limparFormulario()">
+                    <i class="fas fa-broom"></i>
+                    Limpar Formulário
+                </button>
+            </div>
+        </div>
+    </form>
+    {% endif %}
+
+    <!-- Modal de Resultado -->
+    <div id="resultadoModal" class="modal">
+        <div class="modal-content" id="modalContentContainer">
+            <div class="modal-header">
+                <h2 id="modalTitle">
+                    <i class="fas fa-clipboard-check"></i>
+                    Resultado da Auditoria
+                </h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- O conteúdo será carregado dinamicamente -->
+            </div>
+            <div class="modal-footer">
+                <div>
+                    <span>Essa análise está correta?</span>
+                    <button id="btnCorreto" class="btn btn-success">
+                        <i class="fas fa-thumbs-up"></i> Correto
+                    </button>
+                    <button id="btnErrado" class="btn btn-danger">
+                        <i class="fas fa-thumbs-down"></i> Errado
+                    </button>
+                </div>
+                <button id="btnFecharModal" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% if resultado %}
+    <div id="resultadoOriginal" style="display: none;">
+        <div
+            class="result-card {% if resultado.detalhes and resultado.detalhes.pontuacao_final is defined and resultado.detalhes.pontuacao_final >= 7 %}result-improcedente{% else %}result-procedente{% endif %}">
+            <div class="card-header">
+                <h2 class="card-title">
+                    {% if resultado.parecer.lower() == 'procedente' %}
+                    <i class="fas fa-exclamation-triangle"></i> Parecer Final: {{ resultado.parecer }}
+                    {% else %}
+                    <i class="fas fa-check-circle"></i> Parecer Final: {{ resultado.parecer }}
+                    {% endif %}
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="conclusao">
+                    {{ feedback | safe }}
+                </div>
+
+                <div class="feedback-actions">
+                    <form action="/avaliar" method="POST" id="formFeedback">
+                        <input type="hidden" name="auditoria_id" value="{{ resultado.id }}">
+                        <span style="margin-right: 0.5rem;">Essa análise está correta?</span>
+                        <button name="avaliacao" value="correto" class="btn btn-success">
+                            <i class="fas fa-thumbs-up"></i> Correto
+                        </button>
+                        <button name="avaliacao" value="errado" class="btn btn-danger">
+                            <i class="fas fa-thumbs-down"></i> Errado
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</main>
+
+<!-- Splash screen -->
+<div id="splash">
+    <!-- Hexagon background pattern -->
+    <div class="hex-grid" id="hexGrid"></div>
+
+    <div class="splash-container">
+        <div class="splash-logo-container">
+            <!-- O SVG do logo com animações -->
+            <svg class="splash-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                
+                <!-- Base logo circle -->
+                <circle cx="50" cy="50" r="40" fill="#66b3d1" opacity="0.9">
+                    <animate attributeName="r" values="40;42;40" dur="3s" repeatCount="indefinite" />
+                </circle>
+
+                <!-- Outer ring -->
+                <circle cx="50" cy="50" r="48" fill="none" stroke="#00EAFF" stroke-width="2" opacity="0.6">
+                    <animate attributeName="r" values="48;50;48" dur="3s" repeatCount="indefinite" />
+                    <animate attributeName="stroke-opacity" values="0.6;0.8;0.6" dur="3s" repeatCount="indefinite" />
+                </circle>
+
+                <!-- Pulsing circles -->
+                <circle cx="50" cy="50" r="30" fill="none" stroke="#E0FFFF" stroke-width="2" opacity="0.3">
+                    <animate attributeName="r" values="30;55;30" dur="4s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.3;0;0.3" dur="4s" repeatCount="indefinite" />
+                </circle>
+
+                <!-- Rotating arc 1 -->
+                <path d="M50,12 A38,38 0 0,1 88,50" fill="none" stroke="#E0FFFF" stroke-width="3"
+                    stroke-linecap="round">
+                    <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="12s"
+                        repeatCount="indefinite" />
+                </path>
+
+                <!-- Rotating arc 2 (opposite direction) -->
+                <path d="M62,15 A38,38 0 0,1 85,62" fill="none" stroke="#E0FFFF" stroke-width="2"
+                    stroke-linecap="round">
+                    <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="-360 50 50" dur="8s"
+                        repeatCount="indefinite" />
+                </path>
+
+                <!-- Data nodes -->
+                <circle cx="50" cy="20" r="3" fill="#07b3f7">
+                    <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite" />
+                    <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="10s"
+                        repeatCount="indefinite" />
+                </circle>
+
+                <circle cx="80" cy="50" r="3" fill="#07b3f7">
+                    <animate attributeName="opacity" values="0.4;1;0.4" dur="3s" repeatCount="indefinite" />
+                    <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="10s"
+                        repeatCount="indefinite" />
+                </circle>
+
+                <circle cx="50" cy="80" r="3" fill="#07b3f7">
+                    <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2.5s" repeatCount="indefinite" />
+                    <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="10s"
+                        repeatCount="indefinite" />
+                </circle>
+
+                <circle cx="20" cy="50" r="3" fill="#07b3f7">
+                    <animate attributeName="opacity" values="0.5;1;0.5" dur="2.8s" repeatCount="indefinite" />
+                    <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="10s"
+                        repeatCount="indefinite" />
+                </circle>
+
+                <!-- A.I. text -->
+                <image href="{{ url_for('static', filename='img/logo_branca.svg') }}" x="10" y="10" width="80"
+                    height="80" />
+
+                <!-- Scanning effect -->
+                <rect x="10" y="48" width="80" height="4" fill="#ff0328" opacity="0.3">
+                    <animate attributeName="y" values="20;80;20" dur="4s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.3;0.2;0.3" dur="4s" repeatCount="indefinite" />
+                </rect>
+            </svg>
+
+            <!-- Partículas adicionais em torno do logo -->
+            <svg class="splash-particles" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <!-- Partículas que se movem ao redor -->
+                <circle cx="100" cy="40" r="2" fill="#0f172a">
+                    <animate attributeName="cx" values="100;120;100;80;100" dur="5s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="40;50;60;50;40" dur="5s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.7;0.4;0.7" dur="5s" repeatCount="indefinite" />
+                </circle>
+
+                <circle cx="150" cy="100" r="1.5" fill="#0f172a">
+                    <animate attributeName="cx" values="150;140;130;140;150" dur="7s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="100;120;110;90;100" dur="7s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="7s" repeatCount="indefinite" />
+                </circle>
+
+                <circle cx="50" cy="150" r="2" fill="#0f172a">
+                    <animate attributeName="cx" values="50;70;90;70;50" dur="6s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="150;130;110;130;150" dur="6s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.6;0.3;0.6" dur="6s" repeatCount="indefinite" />
+                </circle>
+
+                <circle cx="30" cy="30" r="1.8" fill="#0f172a">
+                    <animate attributeName="cx" values="30;40;50;40;30" dur="4.5s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="30;20;25;20;30" dur="4.5s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.5;0.9;0.5" dur="4.5s" repeatCount="indefinite" />
+                </circle>
+            </svg>
+        </div>
+
+        <div class="splash-text">
+            <p>Aguarde... <strong>Audit.ai</strong> está analisando o atendimento com inteligência artificial.</p>
+            <span class="status-line">Processando informações</span>
+            <div class="progress-bar">
+                <div class="progress-bar-inner"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const textarea = document.querySelector('textarea[name="transcricao"]');
+        const resumoBox = document.getElementById("resumo-dinamico");
+        const instrucaoBox = document.getElementById("instrucao-resumo");
+        const campoNumero = document.getElementById("campo-numero");
+        const campoCodigo = document.getElementById("campo-codigo");
+        const modal = document.getElementById("resultadoModal");
+        const modalBody = document.getElementById("modalBody");
+        const closeBtn = document.querySelector(".close");
+        const btnFecharModal = document.getElementById("btnFecharModal");
+        const btnCorreto = document.getElementById("btnCorreto");
+        const btnErrado = document.getElementById("btnErrado");
+        const btnAnalisarRapido = document.getElementById("btnAnalisarRapido");
+        
+        // Configuração do Modal
+        if (closeBtn) {
+            closeBtn.addEventListener("click", function() {
+                modal.style.display = "none";
+            });
+        }
+        
+        if (btnFecharModal) {
+            btnFecharModal.addEventListener("click", function() {
+                modal.style.display = "none";
+            });
+        }
+        
+        // Fechar modal ao clicar fora dele
+        window.addEventListener("click", function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        });
+        
+        // Botão Analisar Rápido
+        if (btnAnalisarRapido) {
+            btnAnalisarRapido.addEventListener("click", function() {
+                const form = document.getElementById("formAtendimento");
+                if (form) {
+                    // Verificar se há conteúdo no textarea
+                    const transcricao = document.getElementById("transcricao");
+                    if (transcricao && transcricao.value.trim().length > 10) {
+                        // Disparar o splash screen
+                        const splash = document.getElementById("splash");
+                        if (splash) splash.classList.add("show");
+                        
+                        // Configurar e enviar o formulário
+                        const actionInput = document.createElement("input");
+                        actionInput.type = "hidden";
+                        actionInput.name = "acao";
+                        actionInput.value = "analisar";
+                        form.appendChild(actionInput);
+                        form.submit();
+                    } else {
+                        alert("Por favor, insira uma transcrição válida antes de analisar.");
+                    }
+                }
+            });
+        }
+        
+        // Configurar ações de feedback
+        if (btnCorreto) {
+            btnCorreto.addEventListener("click", function() {
+                enviarFeedback("correto");
+            });
+        }
+        
+        if (btnErrado) {
+            btnErrado.addEventListener("click", function() {
+                enviarFeedback("errado");
+            });
+        }
+        
+        function enviarFeedback(tipo) {
+            const formFeedback = document.getElementById("formFeedback");
+            if (formFeedback) {
+                const avaliacaoInput = document.createElement("input");
+                avaliacaoInput.type = "hidden";
+                avaliacaoInput.name = "avaliacao";
+                avaliacaoInput.value = tipo;
+                formFeedback.appendChild(avaliacaoInput);
+                formFeedback.submit();
+                modal.style.display = "none";
+            }
+        }
+
+        // Adicionar hexágonos ao grid
+        const hexGrid = document.getElementById("hexGrid");
+        if (hexGrid) {
+            for (let i = 0; i < 20; i++) {
+                const hex = document.createElement("div");
+                hex.className = "hex";
+                hex.style.left = Math.random() * 100 + "%";
+                hex.style.top = Math.random() * 100 + "%";
+                hex.style.animationDelay = Math.random() * 5 + "s";
+                hexGrid.appendChild(hex);
+            }
+        }
+
+        if (textarea) {
+            textarea.addEventListener("input", () => {
+                const texto = textarea.value;
+                if (texto.length < 10) {
+                    resetSummaryValues();
+                    resumoBox.style.display = "none";
+                    instrucaoBox.style.display = "flex";
+                    return;
+                }
+
+                resumoBox.style.display = "block";
+                instrucaoBox.style.display = "none";
+
+                fetch("/extrair", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ transcricao: texto })
+                })
+                    .then(res => res.json())
+                    .then(data => updateSummaryValues(data))
+                    .catch(() => resetSummaryValues());
+            });
+        }
+
+        function updateSummaryValues(data) {
+            const items = document.querySelectorAll('.summary-item');
+
+            if (campoNumero) {
+                if (data.numero_atendimento && data.numero_atendimento !== "Não identificado") {
+                    campoNumero.innerHTML = data.numero_atendimento;
+                } else {
+                    campoNumero.innerHTML = `<input type="text" name="numero_atendimento_manual" class="form-control" placeholder="Digite manualmente">`;
+                }
+            }
+
+            if (campoCodigo) {
+                if (data.codigo_cliente && data.codigo_cliente !== "Não identificado") {
+                    campoCodigo.innerHTML = data.codigo_cliente;
+                } else {
+                    campoCodigo.innerHTML = `<input type="text" name="codigo_cliente_manual" class="form-control" placeholder="Digite manualmente">`;
+                }
+            }
+
+            if (items.length >= 8) {
+                items[2].querySelector('.summary-value').textContent = data.nome_agente || '-';
+                items[3].querySelector('.summary-value').textContent = data.email_agente || '-';
+                items[4].querySelector('.summary-value').textContent = data.equipe || '-';
+                items[5].querySelector('.summary-value').textContent = data.hora_inicio || '-';
+                items[6].querySelector('.summary-value').textContent = data.tempo_total || '-';
+                items[7].querySelector('.summary-value').textContent = data.tempo_medio_resposta || '-';
+            }
+        }
+
+        function resetSummaryValues() {
+            const values = document.querySelectorAll('.summary-value');
+            values.forEach(value => {
+                if (!value.querySelector('input')) {
+                    value.textContent = '-';
+                }
+            });
+        }
+
+        if (textarea && textarea.value.length >= 10) {
+            resumoBox.style.display = "block";
+            instrucaoBox.style.display = "none";
+        }
+
+        // Configuração do formulário de submissão
+        const formAtendimento = document.querySelector("form");
+        if (formAtendimento) {
+            formAtendimento.addEventListener("submit", (e) => {
+                const botao = e.submitter || document.activeElement;
+                const splash = document.getElementById("splash");
+
+                if (botao && botao.name === "acao" && botao.value === "analisar") {
+                    splash.classList.add("show");
+
+                    const statusLine = splash.querySelector(".status-line");
+                    const statusMessages = [
+                        "Processando informações",
+                        "Analisando contexto do atendimento",
+                        "Verificando procedimentos seguidos",
+                        "Aplicando regras de negócio",
+                        "Realizando auditoria",
+                        "Rolando para baixo",
+                        "Avaliando a reclamação",
+                        "Preparando relatório final"
+                    ];
+                    let statusIndex = 0;
+
+                    setInterval(() => {
+                        statusIndex = (statusIndex + 1) % statusMessages.length;
+                        statusLine.style.opacity = "0";
+                        setTimeout(() => {
+                            statusLine.textContent = statusMessages[statusIndex];
+                            statusLine.style.opacity = "1";
+                        }, 200);
+                    }, 3000);
+                }
+            });
+        }
+
+        // Verificar se há resultado para mostrar no modal
+        const resultadoOriginal = document.getElementById("resultadoOriginal");
+        if (resultadoOriginal) {
+            // Clonar o conteúdo para o modal
+            modalBody.innerHTML = resultadoOriginal.innerHTML;
+            
+            // Configurar a classe do modal baseada no resultado
+            const modalContent = document.getElementById("modalContentContainer");
+            const resultCard = modalBody.querySelector(".result-card");
+            
+            if (resultCard) {
+                if (resultCard.classList.contains("result-procedente")) {
+                    modalContent.className = "modal-content result-procedente";
+                } else if (resultCard.classList.contains("result-improcedente")) {
+                    modalContent.className = "modal-content result-improcedente";
+                }
+                
+                // Extrair o título do parecer
+                const tituloElement = resultCard.querySelector(".card-title");
+                if (tituloElement) {
+                    const modalTitle = document.getElementById("modalTitle");
+                    if (modalTitle) {
+                        modalTitle.innerHTML = tituloElement.innerHTML;
+                    }
+                }
+                
+                // Remover o formulário de feedback do modal, pois temos botões próprios
+                const feedbackActions = modalBody.querySelector(".feedback-actions");
+                if (feedbackActions) {
+                    feedbackActions.remove();
+                }
+            }
+            
+            // Exibir o modal
+            modal.style.display = "block";
+        }
+    });
+
+    function limparFormulario() {
+        document.getElementById("transcricao").value = "";
+        document.getElementById("reclamacao").value = "";
+        document.getElementById("resumo-dinamico").style.display = "none";
+        document.getElementById("instrucao-resumo").style.display = "flex";
+    }
+    
+    function limparAtendimento(event) {
+        event.preventDefault();
+        limparFormulario();
+    }
+</script>
+{% endblock %}

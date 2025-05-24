@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ 'Editar' if agente else 'Novo' }} Agente</title>
+</head>
+<body>
+    <h1>{{ 'Editar' if agente else 'Novo' }} Agente</h1>
+    <form method="post">
+        <label>Nome:</label><br>
+        <input type="text" name="nome" value="{{ agente.nome if agente else '' }}" required><br>
+        
+        <label>Email:</label><br>
+        <input type="email" name="email" value="{{ agente.email if agente else '' }}" required><br>
+        
+        <label>Supervisor:</label><br>
+        <input type="text" name="supervisor" value="{{ agente.supervisor if agente else '' }}"><br>
+        
+        <label>Equipe:</label><br>
+        <input type="text" name="equipe" value="{{ agente.equipe if agente else '' }}"><br><br>
+
+        <button type="submit">Salvar</button>
+        <a href="{{ url_for('agent.listar_agentes') }}">Voltar</a>
+    </form>
+</body>
+</html>
