@@ -1,0 +1,15 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      python: 3.13 # Confirme sua versão do Python (ex: 3.8, 3.9, etc.)
+    commands:
+      - echo "Instalando dependências..."
+      - pip install -r requirements.txt
+  build:
+    commands:
+      - echo "Preparando artefato de deploy..."
+artifacts:
+  files:
+    - '**/*'
+  discard-paths: no
