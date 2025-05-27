@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, flash
 from services.auditor import analisar_atendimento
 from services.extrator import extrair_dados_transcricao, segmentar_transcricao
-from config import DEBUG_ANALISE
+#from config import DEBUG_ANALISE
 import os
 DEBUG_ANALISE = os.environ.get("DEBUG_ANALISE", "False").lower() == "true"
 from routes.auth import login_required, apenas_supervisor
