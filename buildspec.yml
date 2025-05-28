@@ -1,25 +1,15 @@
 version: 0.2
-
 phases:
   install:
     runtime-versions:
-      python: 3.9
+      python: 3.13 # Ajuste para sua versão real do Python
     commands:
-      - echo Installing dependencies...
-      - pip install --upgrade pip
+      - echo "Instalando dependências via pip..."
       - pip install -r requirements.txt
-  pre_build:
-    commands:
-      - echo Pre-build phase started
   build:
     commands:
-      - echo Build started on `date`
-      - echo Build completed
-  post_build:
-    commands:
-      - echo Build completed on `date`
-
+      - echo "Preparando artefato de deploy..."
 artifacts:
   files:
     - '**/*'
-  discard-paths: yes
+  discard-paths: no
