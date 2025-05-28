@@ -2,7 +2,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      python: 3.9 # Ajuste para sua versão real do Python
+      python: 3.13 # Ajuste para sua versão real do Python
     commands:
       - echo "Instalando dependências via pip..."
       - pip install -r requirements.txt
